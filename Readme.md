@@ -7,9 +7,9 @@ This project provides a benchmark suite for evaluating different memory copy str
 ### Requirements
 
 - **Linux OS**
-- **Compiler**: GCC or Clang with C23 support
+- **Compiler**: GCC or Clang with C17 support (tested and works on C99, but it might change in the future)
 - **Build system**: `make`
-- **Hardware**: Intel CPU with AVX, AVX2, AVX-512 support
+- **Hardware**: CPU with AVX, AVX2, AVX-512 support
 	Alternatively, use the [Intel Software Development Emulator]
 
 ### Project Structure
