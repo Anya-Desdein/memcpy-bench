@@ -1,25 +1,30 @@
 SHELL = /bin/sh
 
-.PHONY : all clean s
+.PHONY : all clean
 
 CC := gcc
 
 NAMES := cmemcpy cmemcpy2 cmemcpy3
 
+BASE_FLAGS = -O3 -shared -fPIC -fomit-frame-pointer
+
 # For a specific processor without avx support
-FLAGS_RAPTORLAKE = -O3 -shared -fPIC -march=raptorlake -mtune=raptorlake -fomit-frame-pointer -mno-avx 
+ARCH_RAPTORLAKE = -march=raptorlake -mtune=raptorlake -mno-avx 
 
-FLAGS_SAPPHIRERAPIDS = -O3 -shared -fPIC -march=sapphirerapids -mtune=sapphirerapids -fomit-frame-pointer
+ARCH_SAPPHIRERAPIDS = -march=sapphirerapids -mtune=sapphirerapids
 
-FLAGS ?= $(FLAGS_RAPTORLAKE)
+ARCH ?= $(ARCH_RAPTORLAKE)
+
+A ?= R
+
+ifeq ($(filter S s,$(A)),$(A))
+	ARCH = $(ARCH_SAPPHIRERAPIDS)
+endif
 
 all : $(NAMES:%=%.so)
 
 %.so : %.c
-	$(CC) $< -o $@ $(FLAGS) 
-
-s: 
-	make FLAGS="$(FLAGS_SAPPHIRERAPIDS)" all
+	$(CC) $< -o $@ $(BASE_FLAGS) $(ARCH)
 
 clean :
 	rm -f $(NAMES:%=%.so)
