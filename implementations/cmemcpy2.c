@@ -7,7 +7,7 @@ void *cmemcpy2(
 
 	const size_t divisor      = sizeof(long long int);
 	const size_t numberofints = size/divisor;
-	      size_t reminder     = size % divisor;
+	      size_t remainder     = size % divisor;
 
 	/* Copy 64 bit chunks */
 	long long int * dst_u64 = (long long int *)dest_;
@@ -18,15 +18,15 @@ void *cmemcpy2(
 		++src_u64;
 	}
 
-	/* Copy reminder */
+	/* Copy remainder */
 	char * dst = (char *)dst_u64;
 	char * src = (char *)src_u64;
-	while (reminder) {
+	while (remainder) {
 		*dst = *src;
 		++dst;
 		++src;
 
-		--reminder;
+		--remainder;
 	}
 
 	return dest_;

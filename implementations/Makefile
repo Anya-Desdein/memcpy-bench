@@ -1,17 +1,25 @@
 SHELL = /bin/sh
 
-.PHONY : clean
+.PHONY : all clean s
 
 CC := gcc
 
-NAMES := cmemcpy cmemcpy2
+NAMES := cmemcpy cmemcpy2 cmemcpy3
 
-FLAGS = -O3 -shared -fPIC -march=raptorlake -mtune=raptorlake -fomit-frame-pointer -fkeep-inline-functions -mno-avx 
+# For a specific processor without avx support
+FLAGS_RAPTORLAKE = -O3 -shared -fPIC -march=raptorlake -mtune=raptorlake -fomit-frame-pointer -mno-avx 
+
+FLAGS_SAPPHIRERAPIDS = -O3 -shared -fPIC -march=sapphirerapids -mtune=sapphirerapids -fomit-frame-pointer
+
+FLAGS ?= $(FLAGS_RAPTORLAKE)
 
 all : $(NAMES:%=%.so)
 
 %.so : %.c
 	$(CC) $< -o $@ $(FLAGS) 
+
+s: 
+	make FLAGS="$(FLAGS_SAPPHIRERAPIDS)" all
 
 clean :
 	rm -f $(NAMES:%=%.so)
