@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* 
 	inline at the end is a hint for the compiler
@@ -11,28 +12,29 @@
 #define INLINE   __attribute__((always_inline)) inline
 #define NOINLINE __attribute__((noinline, noclone))
 
-INLINE void *upto128(
+// Basic memcpy unaligned
+INLINE void *smol_unal(
 	      void *restrict const dest_, 
 	const void *restrict const src_,
 	size_t                     size) 
 {
-
 	const size_t divisor      = sizeof(long long int);
 	const size_t numberofints = size/divisor;
 	      size_t remainder     = size % divisor;
 
 	/* Copy 64 bit chunks */
-	long long int * dst_u64 = (long long int *)dest_;
-	long long int * src_u64 = (long long int *)src_;
-	for (int i = 0; i < numberofints; i++) {
+	      long long int * dst_u64 = (      long long int *)dest_;
+	const long long int * src_u64 = (const long long int *)src_;
+	for (size_t i = 0; i < numberofints; i++) {
 		*dst_u64 = *src_u64;
 		++dst_u64;
 		++src_u64;
 	}
 
 	/* Copy remainder */
-	char * dst = (char *)dst_u64;
-	char * src = (char *)src_u64;
+	      char * dst = (      char *)dst_u64;
+	const char * src = (const char *)src_u64;
+
 	while (remainder) {
 		*dst = *src;
 		++dst;
@@ -43,3 +45,59 @@ INLINE void *upto128(
 
 	return dest_;
 }
+
+INLINE void *smol_al(
+	      void *restrict const dest_, 
+	const void *restrict const src_,
+	size_t                     size) 
+{
+	const size_t divisor      = sizeof(long long int);
+	const size_t numberofints = size/divisor;
+	      size_t remainder    = size % divisor;
+
+	/* Copy 64 bit chunks */
+	      long long int * dst_u64 = __builtin_assume_aligned((	long long int *)dest_, 8);
+	const long long int * src_u64 = __builtin_assume_aligned((const long long int *)src_,  8);
+
+	for (size_t i = 0; i < numberofints; i++) {
+		*dst_u64 = *src_u64;
+		++dst_u64;
+		++src_u64;
+	}
+
+	/* Copy remainder */
+	      char * dst = (	  char *)dst_u64;
+	const char * src = (const char *)src_u64;
+	while (remainder) {
+		*dst = *src;
+		++dst;
+		++src;
+
+		--remainder;
+	}
+
+	return dest_;
+}
+
+/*
+	Pick best memcpy strategy
+*/
+void *cmemcpy3(
+	      void *restrict const dest_, 
+	const void *restrict const src_,
+	size_t                     size) 
+{
+	if (size < 128) {
+		if (((uintptr_t)src_) % 8 == 0 && ((uintptr_t)dest_) % 8 == 0) {
+			smol_al(dest_, src_, size);
+		}	
+		smol_unal(dest_, src_, size);
+	} else {
+
+		smol_unal(dest_, src_, size);
+	}
+
+	return dest_;
+}
+
+

@@ -18,8 +18,10 @@
 #include "perf_utils.h"
 #include "memcpy.h"
 
-#define TEXT_MAX_SIZE (1 << 9)
-#define MALLOC_SIZE   (1 << 13)
+#include "assert.h"
+
+#define TEXT_MAX_SIZE (1 << 8)
+#define MALLOC_SIZE   (1 << 12)
 
 size_t clock_frequency = 0;
 
@@ -99,6 +101,7 @@ int main(void) {
 		perror("sched_setaffinity");
 		return 1;
 	} printf("Making sure that cpu affinity was set properly:\n");
+	
 	for (size_t i=0; i<cpuset_size; i++) {
 		if ( (CPU_ISSET(i, &cpu_set)) ) { 
 			printf("1");
@@ -121,40 +124,65 @@ int main(void) {
 	union {
 		Testdata longtxt;
 		Testdata shorttxt;
+		Testdata lol;
 	} Tests;
 
+	void *f1 = dlopen("./cmemcpy.so",  RTLD_NOW);
+	void *f2 = dlopen("./cmemcpy2.so", RTLD_NOW);
+	void *f3 = dlopen("./cmemcpy3.so", RTLD_NOW);
+	if (!f1 || !f2 || !f3) {
+		perror("dlopen");
+		return 1;
+	}
+
+	char *err, *err2, *err3;
+	memcpy_t cmemcpy  = (memcpy_t)dlsym(f1, "cmemcpy" );
+	err = dlerror();
+	memcpy_t cmemcpy2 = (memcpy_t)dlsym(f2, "cmemcpy2");
+	err2 = dlerror();
+	memcpy_t cmemcpy3 = (memcpy_t)dlsym(f3, "cmemcpy3");
+	err3 = dlerror();
+	if (err || err2 || err3) {
+		printf("dlsym error:\nerr:  %s\nerr2: %s\nerr3: %s\n", err, err2, err3);
+		return 1;
+	}
+
+	char *dest = (char *)malloc(MALLOC_SIZE);
+	assert(&dest && "Malloc failed");
+	
 	strcpy(
 		Tests.longtxt.text,
 		"declare p as pointer to function (pointer to function (double, float) "
 		"returning pointer to void) returning pointer to const pointer to pointer "
 		"to function() returning int =\n"
 	);
+
+	Tests.longtxt.size = strlen(Tests.longtxt.text);
+	cmemcpy(dest, Tests.longtxt.text, Tests.longtxt.size); 
+	size_t addr=Tests.longtxt.size;
+	
 	strcpy(
 		Tests.shorttxt.text, 
 		"int(** const *(*p)(void*(*)(double, float)))())\n");
-	
-	Tests.longtxt.size  = strlen(Tests.longtxt.text );
+
 	Tests.shorttxt.size = strlen(Tests.shorttxt.text);
+	cmemcpy2(dest+addr, Tests.shorttxt.text, Tests.shorttxt.size);
+	addr+=Tests.shorttxt.size;
 
-	void *f1 = dlopen("./cmemcpy.so",  RTLD_NOW);
-	void *f2 = dlopen("./cmemcpy2.so", RTLD_NOW);
-	if (!f1 || !f2) {
-		perror("dlopen");
-		return 1;
-	}
+	strcpy(
+		Tests.lol.text,
+		">_<\n");
+	Tests.lol.size = strlen(Tests.lol.text);
 
-	memcpy_t cmemcpy  = dlsym(f1, "cmemcpy" );
-	memcpy_t cmemcpy2 = dlsym(f2, "cmemcpy2");
-	if (!cmemcpy || !cmemcpy2) {
-		perror("dlsym");
-		return 1;
-	}
+	cmemcpy3(dest +
+		 addr, 
 
-	char *dest = (char *)malloc(MALLOC_SIZE);
-	
-	cmemcpy (dest,                    &Tests.longtxt.text ,  Tests.longtxt.size ); 
-	cmemcpy2(dest+Tests.longtxt.size, &Tests.shorttxt.text,  Tests.shorttxt.size);
+		 Tests.lol.text,  
+		 
+		 Tests.lol.size);
 
+	addr+=Tests.lol.size;
+	*(dest + addr) = '\0';
 	printf("%s", dest);
 	free(dest);
 	return 0;
