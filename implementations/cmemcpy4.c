@@ -90,7 +90,11 @@ void *cmemcpy4(
 	const void *restrict const src_,
 	size_t                     size) 
 {
-	if (((uintptr_t)src_) % 8 == 0 && ((uintptr_t)dest_) % 8 == 0) {
+	if (likely(
+	   ((uintptr_t)src_) % 8 == 0 
+	   && 
+	   ((uintptr_t)dest_) % 8 == 0)
+	) {
 		smol_al4(dest_, src_, size);
 
 	} else {
