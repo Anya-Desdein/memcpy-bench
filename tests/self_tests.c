@@ -148,7 +148,7 @@ int main(void) {
 	}
 
 	char *dest = (char *)malloc(MALLOC_SIZE);
-	assert(&dest && "Malloc failed");
+	assert(dest && "Malloc failed");
 	
 	strcpy(
 		Tests.longtxt.text,
