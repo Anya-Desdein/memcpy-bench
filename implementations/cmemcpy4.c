@@ -12,6 +12,9 @@
 #define INLINE   __attribute__((always_inline)) inline
 #define NOINLINE __attribute__((noinline, noclone))
 
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 // Basic memcpy unaligned
 INLINE void *smol_unal4(
 	      void *restrict const dest_, 
@@ -87,13 +90,10 @@ void *cmemcpy4(
 	const void *restrict const src_,
 	size_t                     size) 
 {
-	if (size < 128) {
-		if (((uintptr_t)src_) % 8 == 0 && ((uintptr_t)dest_) % 8 == 0) {
-			smol_al4(dest_, src_, size);
-		}	
-		smol_unal4(dest_, src_, size);
-	} else {
+	if (((uintptr_t)src_) % 8 == 0 && ((uintptr_t)dest_) % 8 == 0) {
+		smol_al4(dest_, src_, size);
 
+	} else {
 		smol_unal4(dest_, src_, size);
 	}
 

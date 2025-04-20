@@ -87,13 +87,10 @@ void *cmemcpy3(
 	const void *restrict const src_,
 	size_t                     size) 
 {
-	if (size < 128) {
-		if (((uintptr_t)src_) % 8 == 0 && ((uintptr_t)dest_) % 8 == 0) {
-			smol_al3(dest_, src_, size);
-		}	
-		smol_unal3(dest_, src_, size);
-	} else {
+	if (((uintptr_t)src_) % 8 == 0 && ((uintptr_t)dest_) % 8 == 0) {
+		smol_al3(dest_, src_, size);
 
+	} else {
 		smol_unal3(dest_, src_, size);
 	}
 
