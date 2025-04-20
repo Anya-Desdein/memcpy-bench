@@ -19,8 +19,8 @@ This project provides a benchmark suite for evaluating different memory copy str
 
 ## Build
 
-To build **memcpy-bench** simply navigate first to respective subdirectories and use `make`
+To build **memcpy-bench** use `make` in the main directory or do it separately in subdirectories.
 
 ## Run
 
-To run **memcpy-bench** go to `tests/` and use `make run`
+To run **memcpy-bench** use `make run` in the main directory or use `make` or `make build` and then `make run` (main benchmark) or `make runt` (self_tests) `tests/` or navigate to subdirectories and do it separately.  
