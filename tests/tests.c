@@ -399,7 +399,7 @@ ARGS:
 This will NOT automatically include NEWLINE 
 So that you can have multi-column out
 */
-void print_column_el(size_t column_len, char *str, char *align, HSV *hsv) {
+void print_column_el(size_t column_len, char *str, const char *align, HSV *hsv) {
 
 	assert(column_len && "Missing column_len in print_column_el()");	
 	assert(str	  && "Missing str in print_column_el()");	
@@ -620,14 +620,14 @@ void generate_result_table(const char *title__) {
 		sizeof(results.arr[0]),	
 		&type_comp);	
 
-	char title[TITLE_MAX_SIZE], header[TITLE_MAX_SIZE];
+	char title[TITLE_MAX_SIZE - 16], header[TITLE_MAX_SIZE];
 	
 	size_t i=0;
 	for (; i < strlen(title__); i++) {
 		title[i] = toupper(title__[i]);		
 	} title[i] = '\0';
 
-	sprintf(header, "%s RESULTS", title);
+	snprintf(header, sizeof(header) ,"%s RESULTS", title);
 
 	const char header_align[] = "center";
 	
