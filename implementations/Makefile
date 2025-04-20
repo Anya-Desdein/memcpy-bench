@@ -4,9 +4,9 @@ SHELL = /bin/sh
 
 CC := gcc
 
-NAMES := cmemcpy cmemcpy2 cmemcpy3
+NAMES := cmemcpy cmemcpy2 cmemcpy3 cmemcpy4
 
-BASE_FLAGS = -O3 -shared -fPIC -fomit-frame-pointer 
+BASE_FLAGS = -O3 -shared -fPIC -fomit-frame-pointer -ffreestanding -nostdlib 
 
 # For a specific processor without avx support
 ARCH_RAPTORLAKE = -march=raptorlake -mtune=raptorlake -mno-avx 

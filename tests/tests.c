@@ -28,7 +28,7 @@
 #define PATTERN_COUNT		2
 #define PATTERN_REPEAT_COUNT	4
 
-#define MEMCPY_COUNT		3
+#define MEMCPY_COUNT		5
 #define WARMUP_COUNT		666
 #define RUN_COUNT		1024	 
 
@@ -447,14 +447,24 @@ int type_comp(const void *lhs_, const void *rhs_) {
 	const Result *rhs = (const Result *)rhs_;
 
 	if (strcmp(lhs->test_name, rhs->test_name) == 0) {
+	
+		if(lhs->size == rhs->size) { 
+			if (lhs->difftime == rhs->difftime)
+				return 0;
 
-		if (lhs->difftime == rhs->difftime)
-			return 0;
+			if (lhs->difftime >= rhs->difftime)
+				return 1;
 
-		if (lhs->difftime >= rhs->difftime)
+			return -1;
+		}
+
+		if (lhs->size >= rhs->size) {
 			return 1;
+		}
 
-		return -1;
+		if (lhs->size >= rhs->size) {
+			return -1;
+		}
 	}
 
 	if (strcmp(lhs->test_name, rhs->test_name) > 0)
@@ -742,7 +752,6 @@ int main(void) {
 	cpu_set_t cpu_set; 
 	size_t cpuset_size = sizeof(cpu_set);
 	
-	//int all_cpus = sysconf(_SC_NPROCESSORS_CONF);
 	int online_cpus = sysconf(_SC_NPROCESSORS_ONLN);
 
 	CPU_ZERO(&cpu_set);		    // clear set and inits struct
@@ -750,9 +759,8 @@ int main(void) {
 
 	pid_t pid = getpid();
 	
-	//printf("CPU_SET MASK SIZE: %zu BYTES\n",    cpuset_size);
-	//printf("TOTAL CPU COUNT: %d, ONLINE: %d\n", all_cpus, online_cpus);
-	//printf("CURRENT PROCESS ID: %d\n",          (int)pid);
+	printf("CPU_SET MASK SIZE: %zu BYTES\n",    cpuset_size);
+	printf("CURRENT PROCESS ID: %d\n",          (int)pid);
 
 	void *pu = dlopen("./perf_utils.so", RTLD_NOW);
 	if (!pu) {
@@ -822,16 +830,35 @@ int main(void) {
 		"memcpy");
 
 	// LOAD MEMCOPY IMPLEMENTATIONS
-	void * f1 = dlopen("./cmemcpy.so",  RTLD_NOW);
-	void * f2 = dlopen("./cmemcpy2.so", RTLD_NOW);
+	int mcount = 4;
+	void *f[mcount];
+	f[0] = dlopen("./cmemcpy.so",  RTLD_NOW);
+	f[1] = dlopen("./cmemcpy2.so", RTLD_NOW);
+	f[2] = dlopen("./cmemcpy3.so", RTLD_NOW);
+	f[3] = dlopen("./cmemcpy4.so", RTLD_NOW);
 	
-	tested_memcpy.arr[1].func = dlsym(f1, "cmemcpy");
+	for (int i=0; i < mcount; i++) {
+		if (!f[i]) {
+			perror("dlopen");
+			return 1;
+		}
+	}
+
+	tested_memcpy.arr[1].func = dlsym(f[0], "cmemcpy");
 	strcpy( tested_memcpy.arr[1].name,
 		"cmemcpy");
 
-	tested_memcpy.arr[2].func = dlsym(f2, "cmemcpy2");
+	tested_memcpy.arr[2].func = dlsym(f[1], "cmemcpy2");
 	strcpy( tested_memcpy.arr[2].name,
 		"cmemcpy2");
+
+	tested_memcpy.arr[3].func = dlsym(f[2], "cmemcpy3");
+	strcpy( tested_memcpy.arr[3].name,
+		"cmemcpy3");
+
+	tested_memcpy.arr[4].func = dlsym(f[3], "cmemcpy4");
+	strcpy( tested_memcpy.arr[4].name,
+		"cmemcpy4");
 
 	if (ARRAY_SIZE(entries.arr) != TEST_COUNT) {
 		printf("entries.arr not %d elements long\n", TEST_COUNT);

@@ -13,7 +13,7 @@
 #define NOINLINE __attribute__((noinline, noclone))
 
 // Basic memcpy unaligned
-INLINE void *smol_unal3(
+INLINE void *smol_unal4(
 	      void *restrict const dest_, 
 	const void *restrict const src_,
 	size_t                     size) 
@@ -46,7 +46,7 @@ INLINE void *smol_unal3(
 	return dest_;
 }
 
-INLINE void *smol_al3(
+INLINE void *smol_al4(
 	      void *restrict const dest_, 
 	const void *restrict const src_,
 	size_t                     size) 
@@ -82,19 +82,19 @@ INLINE void *smol_al3(
 /*
 	Pick best memcpy strategy
 */
-void *cmemcpy3(
+void *cmemcpy4(
 	      void *restrict const dest_, 
 	const void *restrict const src_,
 	size_t                     size) 
 {
 	if (size < 128) {
 		if (((uintptr_t)src_) % 8 == 0 && ((uintptr_t)dest_) % 8 == 0) {
-			smol_al3(dest_, src_, size);
+			smol_al4(dest_, src_, size);
 		}	
-		smol_unal3(dest_, src_, size);
+		smol_unal4(dest_, src_, size);
 	} else {
 
-		smol_unal3(dest_, src_, size);
+		smol_unal4(dest_, src_, size);
 	}
 
 	return dest_;

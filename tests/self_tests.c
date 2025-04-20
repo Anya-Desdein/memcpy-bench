@@ -125,26 +125,38 @@ int main(void) {
 		Testdata longtxt;
 		Testdata shorttxt;
 		Testdata lol;
+		Testdata orang;
 	} Tests;
 
-	void *f1 = dlopen("./cmemcpy.so",  RTLD_NOW);
-	void *f2 = dlopen("./cmemcpy2.so", RTLD_NOW);
-	void *f3 = dlopen("./cmemcpy3.so", RTLD_NOW);
-	if (!f1 || !f2 || !f3) {
-		perror("dlopen");
-		return 1;
+	int mcount = 4;
+	void *f[mcount];
+
+	f[0] = dlopen("./cmemcpy.so",  RTLD_NOW);
+	f[1] = dlopen("./cmemcpy2.so", RTLD_NOW);
+	f[2] = dlopen("./cmemcpy3.so", RTLD_NOW);
+	f[3] = dlopen("./cmemcpy4.so", RTLD_NOW);
+	for (int i=0; i < mcount; i++) {
+		if (!f[i]) {
+			perror("dlopen");
+			return 1;
+		}
 	}
 
-	char *err, *err2, *err3;
-	memcpy_t cmemcpy  = (memcpy_t)dlsym(f1, "cmemcpy" );
-	err = dlerror();
-	memcpy_t cmemcpy2 = (memcpy_t)dlsym(f2, "cmemcpy2");
-	err2 = dlerror();
-	memcpy_t cmemcpy3 = (memcpy_t)dlsym(f3, "cmemcpy3");
-	err3 = dlerror();
-	if (err || err2 || err3) {
-		printf("dlsym error:\nerr:  %s\nerr2: %s\nerr3: %s\n", err, err2, err3);
-		return 1;
+	char *err[4];
+	memcpy_t cmemcpy  = (memcpy_t)dlsym(f[0], "cmemcpy" );
+	err[0] = dlerror();
+	memcpy_t cmemcpy2 = (memcpy_t)dlsym(f[1], "cmemcpy2");
+	err[1] = dlerror();
+	memcpy_t cmemcpy3 = (memcpy_t)dlsym(f[2], "cmemcpy3");
+	err[2] = dlerror();
+	memcpy_t cmemcpy4 = (memcpy_t)dlsym(f[3], "cmemcpy4");
+	err[3] = dlerror();
+	for (int i=0; i < mcount; i++) {
+		if (err[i]) {
+			printf("dlsym error: %s\n", err[i]);
+			return 1;
+		}
+
 	}
 
 	char *dest = (char *)malloc(MALLOC_SIZE);
@@ -182,6 +194,21 @@ int main(void) {
 		 Tests.lol.size);
 
 	addr+=Tests.lol.size;
+	
+	strcpy(
+		Tests.orang.text,
+		"Did you know that orangutans use medicine?\n");
+	Tests.orang.size = strlen(Tests.orang.text);
+
+	cmemcpy4(dest +
+		 addr, 
+
+		 Tests.orang.text,  
+		 
+		 Tests.orang.size);
+
+	addr+=Tests.orang.size;
+
 	*(dest + addr) = '\0';
 	printf("%s", dest);
 	free(dest);
