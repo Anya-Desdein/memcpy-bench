@@ -22,7 +22,7 @@
 
 #define MALLOC_SIZE   (1 << 12)
 
-#define BUILD_BUG_ON_ZERO(expr) ((int)(sizeof(struct { int:(-!!(expr)) })))
+#define BUILD_BUG_ON_ZERO(expr) ((int)(sizeof(struct { int:(-!!(expr)); })))
 
 #define __same_type(a,b) __builtin_types_compatible_p(typeof(a), typeof(b))
 
@@ -125,7 +125,7 @@ int main(void) {
 			printf("\n");
 	} printf("\n");
 
-	const int mcount = 5;
+	const uint64_t mcount = 5;
 	const char *mnlist[] = {
 		"cmemcpy",     
 		"cmemcpy2",    
@@ -138,9 +138,9 @@ int main(void) {
 	char mlist[mcount][1024];
 	void *f[mcount];
 
-	for (int i=0; i < mcount; i++) {
+	for (uint64_t i=0; i < mcount; i++) {
 		snprintf(mlist[i], sizeof(mlist[i]), "./%s.so", mnlist[i]);
-		f[i] = dlopen( mlist[i], RTLD_NOW);
+		f[i] = dlopen(mlist[i], RTLD_NOW);
 		if (!f[i]) {
 			perror("dlopen");
 			return 1;
@@ -149,7 +149,7 @@ int main(void) {
 
 	char *err[mcount];
 	memcpy_t cmemcpy[mcount];
-	for (int i=0; i < mcount; i++) {
+	for (uint64_t i=0; i < mcount; i++) {
 		cmemcpy[i] = (memcpy_t)dlsym(f[i], mnlist[i]);
 		err[i] = dlerror();
 
@@ -174,7 +174,7 @@ int main(void) {
 	assert(dest && "Malloc failed");
 	
 	size_t addr=0;
-	for (int i=0; i < mcount; i++) {	
+	for (uint64_t i=0; i < mcount; i++) {	
 		size_t len = strlen(data[i]);
 		cmemcpy[i](dest+addr, data[i], len);
 		addr+=len;

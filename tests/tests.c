@@ -28,7 +28,7 @@
 #define PATTERN_COUNT		2
 #define PATTERN_REPEAT_COUNT	4
 
-#define MEMCPY_COUNT		5
+#define MEMCPY_COUNT		6
 #define WARMUP_COUNT		666
 #define RUN_COUNT		1024	 
 
@@ -649,8 +649,8 @@ void generate_result_table(const char *title__) {
 	
 	char subh_align[] = "left";
 	char *subh[] = {
-		"TIME      (CYCLES):",
-		"TIME      (NS):",
+		"TIME        (CYCLES):",
+		"TIME        (NS):",
 		"SIZE:",
 		"MEMCPY:",
 		"TEST:"
@@ -830,35 +830,52 @@ int main(void) {
 		"memcpy");
 
 	// LOAD MEMCOPY IMPLEMENTATIONS
-	int mcount = 4;
+	const uint64_t mcount = MEMCPY_COUNT - 1;
 	void *f[mcount];
-	f[0] = dlopen("./cmemcpy.so",  RTLD_NOW);
-	f[1] = dlopen("./cmemcpy2.so", RTLD_NOW);
-	f[2] = dlopen("./cmemcpy3.so", RTLD_NOW);
-	f[3] = dlopen("./cmemcpy4.so", RTLD_NOW);
+	const char *mnlist[] = {
+		"cmemcpy",
+		"cmemcpy2",
+		"cmemcpy3",
+		"cmemcpy_al",
+		"cmemcpy_unal"
+	}; 
+	assert(ARRAY_SIZE(mnlist) == mcount);
 	
-	for (int i=0; i < mcount; i++) {
+	char mlist[mcount][1024];
+
+	for (uint64_t i=0; i < mcount; i++) {
+		snprintf( mlist[i], 
+			  sizeof(mlist[i]),
+			  "./%s.so",
+			  mnlist[i]
+		 );
+		
+		f[i] = dlopen(mlist[i], RTLD_NOW);
 		if (!f[i]) {
 			perror("dlopen");
 			return 1;
 		}
 	}
 
-	tested_memcpy.arr[1].func = dlsym(f[0], "cmemcpy");
+	tested_memcpy.arr[1].func = dlsym(f[0], mnlist[0]);
 	strcpy( tested_memcpy.arr[1].name,
 		"cmemcpy");
 
-	tested_memcpy.arr[2].func = dlsym(f[1], "cmemcpy2");
+	tested_memcpy.arr[2].func = dlsym(f[1], mnlist[1]);
 	strcpy( tested_memcpy.arr[2].name,
 		"cmemcpy2");
 
-	tested_memcpy.arr[3].func = dlsym(f[2], "cmemcpy3");
+	tested_memcpy.arr[3].func = dlsym(f[2], mnlist[2]);
 	strcpy( tested_memcpy.arr[3].name,
 		"cmemcpy3");
 
-	tested_memcpy.arr[4].func = dlsym(f[3], "cmemcpy4");
+	tested_memcpy.arr[4].func = dlsym(f[3], mnlist[3]);
 	strcpy( tested_memcpy.arr[4].name,
-		"cmemcpy4");
+		"cmemcpy_al");
+
+	tested_memcpy.arr[5].func = dlsym(f[4], mnlist[4]);
+	strcpy( tested_memcpy.arr[5].name,
+		"cmemcpy_unal");
 
 	if (ARRAY_SIZE(entries.arr) != TEST_COUNT) {
 		printf("entries.arr not %d elements long\n", TEST_COUNT);
