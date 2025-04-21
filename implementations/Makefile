@@ -4,7 +4,8 @@ SHELL = /bin/sh
 
 CC := gcc
 
-NAMES := cmemcpy cmemcpy2 cmemcpy3 cmemcpy4
+SRC = $(wildcard *.c)
+SO  = $(SRC:.c=.so)
 
 BASE_FLAGS = -O3 -shared -fPIC -fomit-frame-pointer -ffreestanding -nostdlib 
 
@@ -21,10 +22,10 @@ ifeq ($(filter S s,$(A)),$(A))
 	ARCH = $(ARCH_SAPPHIRERAPIDS)
 endif
 
-all : $(NAMES:%=%.so)
+all : $(SO)
 
 %.so : %.c
 	$(CC) $< -o $@ $(BASE_FLAGS) $(ARCH)
 
 clean :
-	rm -f $(NAMES:%=%.so)
+	rm -f $(SO)
