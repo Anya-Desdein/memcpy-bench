@@ -20,8 +20,17 @@
 
 #include "assert.h"
 
-#define TEXT_MAX_SIZE (1 << 8)
 #define MALLOC_SIZE   (1 << 12)
+
+#define BUILD_BUG_ON_ZERO(expr) ((int)(sizeof(struct { int:(-!!(expr)) })))
+
+#define __same_type(a,b) __builtin_types_compatible_p(typeof(a), typeof(b))
+
+#define ARRAY_SIZE(arr) \
+	((void)BUILD_BUG_ON_ZERO( \
+		__same_type((arr), &(arr)[0])), \
+		(sizeof(arr) / sizeof((arr)[0])) \
+	)
 
 size_t clock_frequency = 0;
 
@@ -116,98 +125,60 @@ int main(void) {
 			printf("\n");
 	} printf("\n");
 
-	typedef struct {
-		char   text[TEXT_MAX_SIZE];
-		size_t size;
-	} Testdata;
+	const int mcount = 5;
+	const char *mnlist[] = {
+		"cmemcpy",     
+		"cmemcpy2",    
+		"cmemcpy3",    
+		"cmemcpy_al",  
+		"cmemcpy_unal"	
+	};
+	assert(ARRAY_SIZE(mnlist) == mcount);
 
-	union {
-		Testdata longtxt;
-		Testdata shorttxt;
-		Testdata lol;
-		Testdata orang;
-	} Tests;
-
-	int mcount = 4;
+	char mlist[mcount][1024];
 	void *f[mcount];
 
-	f[0] = dlopen("./cmemcpy.so",  RTLD_NOW);
-	f[1] = dlopen("./cmemcpy2.so", RTLD_NOW);
-	f[2] = dlopen("./cmemcpy3.so", RTLD_NOW);
-	f[3] = dlopen("./cmemcpy4.so", RTLD_NOW);
 	for (int i=0; i < mcount; i++) {
+		snprintf(mlist[i], sizeof(mlist[i]), "./%s.so", mnlist[i]);
+		f[i] = dlopen( mlist[i], RTLD_NOW);
 		if (!f[i]) {
 			perror("dlopen");
 			return 1;
 		}
 	}
 
-	char *err[4];
-	memcpy_t cmemcpy  = (memcpy_t)dlsym(f[0], "cmemcpy" );
-	err[0] = dlerror();
-	memcpy_t cmemcpy2 = (memcpy_t)dlsym(f[1], "cmemcpy2");
-	err[1] = dlerror();
-	memcpy_t cmemcpy3 = (memcpy_t)dlsym(f[2], "cmemcpy3");
-	err[2] = dlerror();
-	memcpy_t cmemcpy4 = (memcpy_t)dlsym(f[3], "cmemcpy4");
-	err[3] = dlerror();
+	char *err[mcount];
+	memcpy_t cmemcpy[mcount];
 	for (int i=0; i < mcount; i++) {
+		cmemcpy[i] = (memcpy_t)dlsym(f[i], mnlist[i]);
+		err[i] = dlerror();
+
 		if (err[i]) {
 			printf("dlsym error: %s\n", err[i]);
 			return 1;
 		}
-
 	}
+	
+	const char *data[] = {
+		"declare p as pointer to function (pointer to function (double, float) "
+		"returning pointer to void) returning pointer to const pointer to pointer "
+		"to function() returning int =\n",
+		"int(** const *(*p)(void*(*)(double, float)))())\n",
+		">_<\n",
+		"Did you know that orangutans use medicine?\n",
+		"Did you know that male seahorses give birth?\n"
+	};
+	assert(ARRAY_SIZE(data) == mcount);
 
 	char *dest = (char *)malloc(MALLOC_SIZE);
 	assert(dest && "Malloc failed");
 	
-	strcpy(
-		Tests.longtxt.text,
-		"declare p as pointer to function (pointer to function (double, float) "
-		"returning pointer to void) returning pointer to const pointer to pointer "
-		"to function() returning int =\n"
-	);
-
-	Tests.longtxt.size = strlen(Tests.longtxt.text);
-	cmemcpy(dest, Tests.longtxt.text, Tests.longtxt.size); 
-	size_t addr=Tests.longtxt.size;
-	
-	strcpy(
-		Tests.shorttxt.text, 
-		"int(** const *(*p)(void*(*)(double, float)))())\n");
-
-	Tests.shorttxt.size = strlen(Tests.shorttxt.text);
-	cmemcpy2(dest+addr, Tests.shorttxt.text, Tests.shorttxt.size);
-	addr+=Tests.shorttxt.size;
-
-	strcpy(
-		Tests.lol.text,
-		">_<\n");
-	Tests.lol.size = strlen(Tests.lol.text);
-
-	cmemcpy3(dest +
-		 addr, 
-
-		 Tests.lol.text,  
-		 
-		 Tests.lol.size);
-
-	addr+=Tests.lol.size;
-	
-	strcpy(
-		Tests.orang.text,
-		"Did you know that orangutans use medicine?\n");
-	Tests.orang.size = strlen(Tests.orang.text);
-
-	cmemcpy4(dest +
-		 addr, 
-
-		 Tests.orang.text,  
-		 
-		 Tests.orang.size);
-
-	addr+=Tests.orang.size;
+	size_t addr=0;
+	for (int i=0; i < mcount; i++) {	
+		size_t len = strlen(data[i]);
+		cmemcpy[i](dest+addr, data[i], len);
+		addr+=len;
+	}
 
 	*(dest + addr) = '\0';
 	printf("%s", dest);
